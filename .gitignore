@@ -1,0 +1,15 @@
+# secrets
+.env
+
+# runtime data
+data/
+*.session
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+
+# virtualenv
+.venv/
+venv/

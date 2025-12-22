@@ -12,12 +12,15 @@ log = logging.getLogger(__name__)
 ProgressHook = Callable[[Dict[str, Any]], None]
 
 
-def extract_info(url: str) -> Dict[str, Any]:
-    ydl_opts = {
+def extract_info(url: str, cookies_file: str | None = None) -> Dict[str, Any]:
+    ydl_opts: dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
     }
+    if cookies_file:
+        ydl_opts["cookiefile"] = cookies_file
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -49,7 +52,17 @@ def download(
     format_id: str,
     out_dir: str,
     progress_hook: Optional[ProgressHook] = None,
+    to_mp3: bool = False,
+    cookies_file: str | None = None,
 ) -> str:
+    """
+    Downloads media using yt-dlp and returns a path to the final file.
+
+    If to_mp3=True, yt-dlp will extract audio and convert it to mp3 using ffmpeg.
+    (ffmpeg must be installed on the machine).
+
+    cookies_file: path to cookies.txt (optional).
+    """
     os.makedirs(out_dir, exist_ok=True)
 
     hooks = []
@@ -71,13 +84,26 @@ def download(
         "socket_timeout": 20,
     }
 
+    if cookies_file:
+        ydl_opts["cookiefile"] = cookies_file
+
+    if to_mp3:
+        # Convert extracted audio to mp3 via ffmpeg
+        ydl_opts["postprocessors"] = [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        }]
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
 
+        # Sometimes yt-dlp provides direct filepath
         fp = info.get("filepath")
         if fp and os.path.exists(fp) and os.path.getsize(fp) > 0 and not fp.endswith(".part"):
             return fp
 
+        # Sometimes filepaths are inside requested_downloads
         req = info.get("requested_downloads")
         if isinstance(req, list) and req:
             for item in reversed(req):
@@ -85,6 +111,7 @@ def download(
                 if fp2 and os.path.exists(fp2) and os.path.getsize(fp2) > 0 and not fp2.endswith(".part"):
                     return fp2
 
+        # Try prepared filename
         try:
             p = ydl.prepare_filename(info)
             if p and os.path.exists(p) and os.path.getsize(p) > 0 and not p.endswith(".part"):
