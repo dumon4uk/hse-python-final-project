@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from pathlib import Path
@@ -32,9 +31,14 @@ async def _get_telethon_client():
         settings.TELETHON_API_HASH,
     )
 
-    await client.start(bot_token=settings.BOT_TOKEN)
+    await client.connect()
+
+    if not await client.is_user_authorized():
+        await client.sign_in(bot_token=settings.BOT_TOKEN)
+
     _telethon_client = client
     return _telethon_client
+
 
 
 async def close_telethon_client() -> None:

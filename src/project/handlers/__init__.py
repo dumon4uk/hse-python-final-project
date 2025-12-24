@@ -8,3 +8,10 @@ router = Router()
 router.include_router(start_router)
 router.include_router(download_router)
 router.include_router(help_router)
+
+__all__ = [
+    "router",
+    "start_router",
+    "download_router",
+    "help_router",
+]

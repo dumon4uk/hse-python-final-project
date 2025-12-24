@@ -44,7 +44,7 @@ def _opt_int(name: str) -> int | None:
 
 
 settings = Settings(
-    BOT_TOKEN=_opt_env("BOT_TOKEN"),
+    BOT_TOKEN=_require_env("BOT_TOKEN"),
     DOWNLOADS_DIR=os.getenv("DOWNLOADS_DIR", "data/downloads"),
     MAX_DURATION_SECONDS=int(os.getenv("MAX_DURATION_SECONDS", str(60 * 60))),
     COOKIES_FILE=_opt_env("COOKIES_FILE"),
